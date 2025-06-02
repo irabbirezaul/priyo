@@ -10,8 +10,9 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 import os
 
-BOT_TOKEN = "7631663395:AAFItyBLpVoFrNX1Eoa5gOK8wOeAG0OlkI0"
-API_KEY = "5VmjtebU6s3yWnwAELSd"
+# ✅ Read tokens from environment variables for security
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+API_KEY = os.getenv("API_KEY")
 
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
@@ -95,36 +96,38 @@ async def handle_create_mail(message: types.Message):
         [InlineKeyboardButton(text=domain, callback_data=domain)] for domain in domains
     ])
 
-    await message.answer("Select mail domain:", parse_mode=ParseMode.HTML, reply_markup=keyboard)
+    await message.answer("📧 Select mail domain:", parse_mode=ParseMode.HTML, reply_markup=keyboard)
+
 @dp.message(Command("start"))
 async def handle_start(message: types.Message):
     welcome_text = (
-        "👋 Welcome to the <b>PhilSocial Email Bot</b>!\n\n"
+        "👋 <b>Welcome to the PhilSocial Email Bot!</b>\n\n"
         "With this bot, you can quickly generate temporary email addresses for PhilSocial account verification.\n\n"
-        "📩 To get started, command <b>click here </b>👇\n"
+        "📬 To get started, simply click below 👇\n\n"
         "<b>/create_mail</b>\n\n"
         "We'll handle the rest — from email creation to inbox checking and automatic verification. ✅\n\n"
         "If you have any issues, feel free to reach out to the admin.\n\n"
         "Enjoy! 🚀"
     )
     await message.answer(welcome_text, parse_mode=ParseMode.HTML)
+
 @dp.callback_query()
 async def handle_domain_selection(callback: types.CallbackQuery):
     domain = callback.data
-    await callback.message.edit_text(f"Generating email with domain {domain}...", parse_mode=ParseMode.HTML)
+    await callback.message.edit_text(f"📨 Generating email with domain <b>{domain}</b>...", parse_mode=ParseMode.HTML)
 
     email = await create_email(domain)
     if not email:
-        await callback.message.edit_text("Failed to create email after 3 attempts. Please contact admin to update API.")
+        await callback.message.edit_text("⚠️ Failed to create email after 3 attempts. Please contact admin to update API.")
         return
 
-    await callback.message.edit_text(f"PhilSocial Mail [1-Tap Copy]\n\n<code>{email}</code>", parse_mode=ParseMode.HTML)
+    await callback.message.edit_text(f"📧 PhilSocial Mail [1-Tap Copy]\n\n<code>{email}</code>", parse_mode=ParseMode.HTML)
 
     link = await check_inbox(email)
     if link:
         verified = await verify_email(link)
         if verified:
-            await callback.message.answer("Email verification complete!")
+            await callback.message.answer("✅ Email verification complete!")
 
 async def main():
     await bot.delete_webhook(drop_pending_updates=True)
